@@ -1,0 +1,206 @@
+{
+  "name": "Website Support Agent (RAG + Email Escalation)",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "mode": "webhook",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        900,
+        100
+      ],
+      "id": "bc8ccd18-9517-4b35-9275-ade9db26c618",
+      "name": "When chat message received",
+      "webhookId": "4541890f-7353-43ae-baae-3ac6e21a08a6"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "= {{ $json.chatInput }} {{ $json.message }}",
+        "options": {
+          "systemMessage": "=You are a website Support agent\n\nYou have a number of tools at your disposal\n\n1. Send Email - use this tool to send an email to the customer team with the name and mail address of the person who raise a issue \n\n2. RAG Question - Use this tool for general business FAQ questions."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        1120,
+        100
+      ],
+      "id": "d0348903-9d27-4d82-b513-84ba36c2f4d7",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1000,
+        340
+      ],
+      "id": "695f9ffb-a028-416a-a5cb-2a40350542b3",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "WkNihRd5LfnFDYgI",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.sessionId }} {{ $json.chatId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        1200,
+        340
+      ],
+      "id": "a27f2e54-a51c-4ac2-a167-c858767c43e8",
+      "name": "Postgres Chat Memory"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool to query general business FAQ questions",
+        "method": "POST",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Api-Key",
+              "valueProvider": "fieldValue"
+            },
+            {
+              "name": "Content-Type",
+              "valueProvider": "fieldValue"
+            },
+            {
+              "name": "X-Pinecone-API-Version",
+              "valueProvider": "fieldValue"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"{rag-question}\"\n    }\n  ],\n  \"stream\": false,\n  \"model\": \"gpt-4o\"\n}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "{rag-question}",
+              "description": "the questions to ask the RAG agent"
+            }
+          ]
+        },
+        "optimizeResponse": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1560,
+        340
+      ],
+      "id": "9b757b90-de4d-47c9-bee9-2d4566742b68",
+      "name": "Rag Questions"
+    },
+    {
+      "parameters": {
+        "subject": "New Support request",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        1380,
+        340
+      ],
+      "id": "c3bd4516-85b5-4c23-a02c-9a9bfdabcd16",
+      "name": "Send Email",
+      "webhookId": "30c48372-2835-4c55-8009-b3405dc088ca"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rag Questions": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cf4dd683-3c77-4d9a-95ca-9dc0f6134663",
+  "meta": {
+    "instanceId": "28dce675ee27a1064072e27c15b9f206e3cb763ee136d0c0334d042fdcdc426f"
+  },
+  "id": "95DGWhYEekO1IQxy",
+  "tags": []
+}
