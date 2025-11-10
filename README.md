@@ -1,1 +1,1 @@
-# n8n_repo
+# n8n_projects
