@@ -1,0 +1,315 @@
+{
+  "name": "Lead Scraper (Template)",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c533bc73-675d-4d98-8461-547106b77fc5",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "url": "https://api.apify.com/v2/acts/code_crafter~apollo-scraper/run-sync-get-dataset-items?token=apify_api_vdmjGyhC8rw6YX1HtD0ERgKg9oIErU3SuoLj",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "<API-KEY>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n    \"getPersonalEmails\": true,\n    \"getWorkEmails\": true,\n    \"totalRecords\": 500,\n    \"url\": \"{{ $json.finalURL }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "id": "f978504c-77b0-4c21-b4f1-5cc1d62ce476",
+      "name": "Apollo Scraper"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Retrieve the input data from node A.\nlet inputData = $node[\"JSON\"].json;\n// If the output is an array, take the first element; otherwise, use it as is.\nif (Array.isArray(inputData)) {\n  inputData = inputData[0];\n}\n\n// Now, access the \"query\" property. \n// We expect \"query\" to be an array, so take its first element.\nconst paramsData = inputData.query[0];\n\n// Base URL for Apollo\nconst baseURL = 'https://app.apollo.io/#/people';\n\n// Array to hold each part of the query string\nconst queryParts = [];\n\n// Add static parameters\nqueryParts.push('sortByField=recommendations_score');\nqueryParts.push('sortAscending=false');\nqueryParts.push('page=1');\n\n// Helper function to process and add array parameters to queryParts\nconst addArrayParams = (paramName, values) => {\n  values.forEach(val => {\n    // Replace '+' with space then encode the value \n    // (e.g., \"sydney+australia\" -> \"sydney australia\" -> \"sydney%20australia\")\n    const decodedValue = val.replace(/\\+/g, ' ');\n    queryParts.push(`${paramName}[]=${encodeURIComponent(decodedValue)}`);\n  });\n};\n\n// Process job titles (maps to personTitles[])\nif (paramsData.job_title && Array.isArray(paramsData.job_title)) {\n  addArrayParams('personTitles', paramsData.job_title);\n}\n\n// Process locations (maps to personLocations[])\nif (paramsData.location && Array.isArray(paramsData.location)) {\n  addArrayParams('personLocations', paramsData.location);\n}\n\n// Process business keywords (maps to qOrganizationKeywordTags[])\nif (paramsData.business && Array.isArray(paramsData.business)) {\n  addArrayParams('qOrganizationKeywordTags', paramsData.business);\n}\n\n// Add static included organization keyword fields\nqueryParts.push('includedOrganizationKeywordFields[]=tags');\nqueryParts.push('includedOrganizationKeywordFields[]=name');\n\n// Combine all query parts with '&' to form the full query string\nconst queryString = queryParts.join('&');\n\n// Build the final URL\nconst finalURL = `${baseURL}?${queryString}`;\n\n// Return the output as an array of objects\nreturn [{ json: { finalURL } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "acf82103-4b3d-4ff4-a02e-ecf7952ecc44",
+      "name": "Create URL"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "336074e3-b3b9-4dde-92d7-fb5af51b8ffa",
+              "name": "fullName",
+              "value": "={{ $json.first_name }} {{ $json.last_name }}",
+              "type": "string"
+            },
+            {
+              "id": "da8362c5-75a5-4431-847d-fd4e02112bcc",
+              "name": "emailAddress",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "3c99e0e0-4184-4e85-baa0-8bb85e4e227b",
+              "name": "linkedInURL",
+              "value": "={{ $json.linkedin_url }}",
+              "type": "string"
+            },
+            {
+              "id": "a45af1ff-7026-47a0-a42c-bdb3b27c8e3d",
+              "name": "=seniority ",
+              "value": "={{ $json.seniority }}",
+              "type": "string"
+            },
+            {
+              "id": "fa551406-a981-4fbb-babc-aa78ab10010d",
+              "name": "jobTitle",
+              "value": "={{ $json.employment_history[0].title }}",
+              "type": "string"
+            },
+            {
+              "id": "2e8d8d61-bd02-4f24-91f1-707152d99806",
+              "name": "companyName",
+              "value": "={{ $json.employment_history[0].organization_name }}",
+              "type": "string"
+            },
+            {
+              "id": "1295a702-636a-48bd-8bcd-df92162237fb",
+              "name": "location",
+              "value": "={{ $json.city }}, {{ $json.state }}",
+              "type": "string"
+            },
+            {
+              "id": "0072b657-0296-4858-b190-621831943816",
+              "name": "country",
+              "value": "={{ $json.country }}",
+              "type": "string"
+            },
+            {
+              "id": "22ce107c-30ef-4abe-9fab-8d49482da87c",
+              "name": "Number",
+              "value": "={{ $json.organization.primary_phone && $json.organization.primary_phone.sanitized_number && $json.organization.primary_phone.sanitized_number ? $json.organization.primary_phone.sanitized_number : null }}",
+              "type": "string"
+            },
+            {
+              "id": "302b9529-e16b-49ce-bbb6-ae2de90fed93",
+              "name": "websiteURL",
+              "value": "={{ $json.organization_website_url }}",
+              "type": "string"
+            },
+            {
+              "id": "13026de1-0927-44f7-8388-4d525f44974d",
+              "name": "businessIndustry",
+              "value": "={{ $('JSON').item.json.query[0].business[0].replaceAll('+',' ') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1200,
+        0
+      ],
+      "id": "ad116392-1ceb-4da7-bce4-8e9c04b74295",
+      "name": "Extract Info"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2ecbc937-c5dc-4948-8d27-ccdb4d4a9bed",
+              "name": "output",
+              "value": "={{ $input.all().length }} new contacts have been added to the Google Sheet!",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1820,
+        0
+      ],
+      "id": "e0ce0f60-992d-4a60-951a-bacf02ec14a9",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        2120,
+        0
+      ],
+      "id": "cb62aba1-1c7c-4af7-8955-f11fc34703dc",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n\"query\": \n{{ $json.query }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        280,
+        0
+      ],
+      "id": "54686530-eacf-4517-a892-14d2adeed2c0",
+      "name": "JSON"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1IUsvw17XIQEUgCIlOhEf-p8sEbDMgRVF58Xini8QIJU",
+          "mode": "list",
+          "cachedResultName": "lead agent1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1IUsvw17XIQEUgCIlOhEf-p8sEbDMgRVF58Xini8QIJU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1794148084,
+          "mode": "list",
+          "cachedResultName": "Sheet8",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1IUsvw17XIQEUgCIlOhEf-p8sEbDMgRVF58Xini8QIJU/edit#gid=1794148084"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1520,
+        0
+      ],
+      "id": "ec4cc0a2-12bd-44d3-9421-f2466890bed9",
+      "name": "Google Sheets stores scraped data"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apollo Scraper": {
+      "main": [
+        [
+          {
+            "node": "Extract Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create URL": {
+      "main": [
+        [
+          {
+            "node": "Apollo Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Info": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets stores scraped data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSON": {
+      "main": [
+        [
+          {
+            "node": "Create URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets stores scraped data": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5c03c3fe-9f24-4aa0-8e06-d7742f8241bf",
+  "meta": {
+    "instanceId": "28dce675ee27a1064072e27c15b9f206e3cb763ee136d0c0334d042fdcdc426f"
+  },
+  "id": "higaMWw6mdKo3mM5",
+  "tags": []
+}
