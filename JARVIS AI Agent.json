@@ -1,0 +1,343 @@
+{
+  "name": "JARVIS AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message.text }}",
+        "options": {
+          "systemMessage": "=You are a personal AI assistant. When a user gives a task like creating events, sending emails, or searching the web, you must decide the correct tool to use and call it with all necessary parameters. You have access to tools such as Google Calendar, Gmail, Google Sheets, etc. Respond clearly to the user after completing the task.\n\n\nYour job is to:\n1. Clearly understand the user’s intent from their message.\n2. Select and use the right tool to complete the task.\n3. Confirm when a task is completed or if there was an error.\n4. Be smart, helpful, and professional in your responses.\n\nTools available to you:\n- 📧 Gmail → Send well-written, polite, professional emails.\n- 📆 Google Calendar → Schedule events with title, date, time, and optional details.\n- 📁 Google Drive → Download files when a filename and folder are provided.\n- 📊 Google Sheets → Append data into the right spreadsheet and sheet.\n- 🧠 Think → Use this when intermediate reasoning or decision-making is required before choosing a tool.\n- 🔍 Search → Use this when the user asks a question that needs live, current, or external information.\n\nAlways choose the appropriate tool and take action automatically. Confirm your actions to the user in natural language.\n\nDo not respond with JSON unless explicitly asked."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        192,
+        144
+      ],
+      "id": "c44dd8e3-ba3f-4f63-842a-d3552730333b",
+      "name": "Jarvis AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        288,
+        368
+      ],
+      "id": "5933f83c-f04e-4da5-9d35-220f463efa0a",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "K1uhEfpJuxHHAyrR",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        368
+      ],
+      "id": "50fc88b7-d56a-494b-a2e6-6440c74b5ea1",
+      "name": "Gmail",
+      "webhookId": "8f041ab7-39ea-4f2d-bcdb-cb22cf8a56aa"
+    },
+    {
+      "parameters": {
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "root",
+          "cachedResultName": "/ (Root folder)"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTool",
+      "typeVersion": 3,
+      "position": [
+        528,
+        368
+      ],
+      "id": "b31a0668-e12c-4d26-b533-8c243516fb94",
+      "name": "Google Drive"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Calendar', ``, 'string') }}",
+          "mode": "id",
+          "__regex": "(^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*)"
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        656,
+        368
+      ],
+      "id": "6b6d2a4e-2c50-45e5-bcd9-9b218d0418c9",
+      "name": "Google Calendar"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Document', ``, 'string') }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Sheet', ``, 'string') }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.5,
+      "position": [
+        784,
+        368
+      ],
+      "id": "e2f5fc27-19c4-4d3d-94a3-5ed270550d4b",
+      "name": "Google Sheets"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -96,
+        368
+      ],
+      "id": "27840b1e-a660-416c-902a-dbbbe27bfaff",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "RDNznG37PFlIWsLy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -32,
+        144
+      ],
+      "id": "29145ec0-30a8-41c7-bfc3-257a3b696c57",
+      "name": "Telegram Trigger",
+      "webhookId": "2ce13f9c-2f36-4cb1-bbe9-899cd7564128",
+      "credentials": {
+        "telegramApi": {
+          "id": "nlJ2b5xceiE87U6s",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        144
+      ],
+      "id": "e233e136-e5b8-4b66-a269-2487f7d93d92",
+      "name": "Telegram",
+      "webhookId": "07138121-5e58-4f89-ace4-850df9e5ab51",
+      "credentials": {
+        "telegramApi": {
+          "id": "nlJ2b5xceiE87U6s",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "ww"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        160,
+        368
+      ],
+      "id": "5fe4036c-d109-4764-91c7-abd941c580fc",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        32,
+        368
+      ],
+      "id": "2d598992-5af5-48ee-8b8f-64f029308b13",
+      "name": "Think"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jarvis AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jarvis AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jarvis AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jarvis AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jarvis AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Jarvis AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Jarvis AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Jarvis AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Jarvis AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "Jarvis AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "96c0f790-eefd-4f3d-8d31-3da7bf451f7a",
+  "meta": {
+    "instanceId": "8c6893a510b9a8edf020172b37cad56a0a5a9058fd3c1d339e923b7377464ac2"
+  },
+  "id": "Rrvy2rWkj0Ge1Slx",
+  "tags": []
+}
